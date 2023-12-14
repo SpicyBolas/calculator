@@ -1,12 +1,30 @@
 import React from 'react';
 import './App.css';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  buttonPress,
+  equals,
+  clear
+} from './features/calculator/calculatorSlice';
+
+
+
 
 function App() {
+  const instDisplay = useSelector((state) => state.calculator.instDisplay);
+  const display = useSelector((state) => state.calculator.display);
+  
+  
   return (
     <div className="App">
       <div id='calculator'>
         <div id='display'>
-
+          <div id='top'>
+            {display}
+          </div>
+          <div id="bottom">
+            {instDisplay}
+          </div>
         </div>
 
         <div id='buttons'>
