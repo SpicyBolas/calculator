@@ -12,15 +12,38 @@ import {
 function App() {
   const instDisplay = useSelector((state) => state.calculator.instDisplay);
   const display = useSelector((state) => state.calculator.display);
+  const storedResult = useSelector((state) => state.calculator.storedVal);
   const dispatch = useDispatch();
 
   function handleOnClick(e) {
+    
+    //Do not permit operations after another except for minus
+    if(['plus','multiply','divide'].includes(e.target.id)&['+','x','÷','-'].includes(display[display.length-1])){
+      return;
+    }
+    //Make sure no more than two minus' can be next to each other
+    else if(e.target.id=='minus'&display[display.length-2]=='-'){
+      return;
+    }
+    
+    //if the equals button had been pressed previously then clear the display and use the previous result going forward 
+    if(display.split('').includes('=')){
+      //Make a copy of the storedResult
+      let result = [...[storedResult]][0];
+      console.log(result);
+      //Set display to stored result
+      dispatch(clear());
+      dispatch(buttonPress(result));  
+    }
+    
     if(e.target.id=='zero'){
       console.log(e.target.querySelector('span').innerHTML);
       dispatch(buttonPress(e.target.querySelector('span').innerHTML.toString()));
       return;
     }
 
+    
+    
     dispatch(buttonPress(e.target.innerHTML.toString()));
   
   }
@@ -30,34 +53,73 @@ function App() {
   }
 
   function handleEquals(e){
-    let regex_nums = /([0-9]|\.)+/g;
-    let regex_ops = /[^0-9.]/g;
+    //do nothing if last operation was 'equals'
+    if(display.split('').includes('=')){
+      return;
+    }
+    
+    
+    let result;
+    let regex_nums = /([0-9]+(\.[0-9]+)?)/g;
+    let regex_ops = /[^0-9.]+/g;
+    
+    
     let numbers = display.match(regex_nums);
     let ops = display.match(regex_ops);
     
-    let result = Number(numbers[0]);
-    //Modifty for BIDMAS logic
-    //Append the result such that it fits on the screen
-    //Implement logic such that certain operations do nothing sequentially
-    //Update buttons function so that numbers are retained until operation
+    //Check if the first value is a negative number
+    //If so, make sure result value starts as negative and that
+    //the first negative operation is removed from the array
+    if(ops.length == numbers.length&ops[0]=='-'){
+      result = -Number(numbers[0]);
+      ops.shift();  
+    }
+    else if(ops.length == numbers.length-1){
+      result = Number(numbers[0]); 
+    }
+    else{
+      console.log('Error');
+    }
+    console.log(result);
+    //Optional: Modifty for BIDMAS logic
     
     for(let i=1;i<numbers.length;i++){
       if(ops[i-1]=='+'){
         result += Number(numbers[i]);
       }
+      else if(ops[i-1]=='+-'){
+        result -= Number(numbers[i]);
+      }
       else if(ops[i-1]=='-'){
         result -= Number(numbers[i]);
+      }
+      else if(ops[i-1]=='--'){
+        result += Number(numbers[i]);
       }
       else if(ops[i-1]=='x'){
         result *= Number(numbers[i]);
       }
+      else if(ops[i-1]=='x-'){
+        result *= -Number(numbers[i]);
+      }
       else if (ops[i-1]=='÷'){
         result /= Number(numbers[i]);
+      }
+      else if (ops[i-1]=='÷-'){
+        result /= -Number(numbers[i]);
       }
       else{
         console.log('Error');
       }
     }
+
+    //no more than 8 decimal places
+    result = Number(result.toFixed(8));
+    //Append to 12 siginificant figures
+    if(result.toString().length>9){
+          result = result.toPrecision(8);
+    }
+
     
     let newDisplay = display + '=' + result.toString();
     let payload = {display: newDisplay,result: result};
